@@ -4,7 +4,8 @@ mod graphics;   //0-Adds the graphic.rs module
 mod math_drg;
 mod camera_drg;
 mod debug_tools_drg;
-mod basic_shapes;
+mod objects_handling;
+mod obj_parser;
 
 use crate::{app::App, graphics::Graphics};          //3-Crate is a path prefix so it shows the rust_code_pw   
 use winit::event_loop::{ControlFlow, EventLoop};    //1-Use winit functions

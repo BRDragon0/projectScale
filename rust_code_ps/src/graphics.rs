@@ -17,6 +17,7 @@ use winit::{dpi::PhysicalSize, event_loop::EventLoopProxy, window::Window};
 use crate::debug_tools_drg::debug_matrix_print;
 use crate::{debug_tools_drg, math_drg};
 use crate::camera_drg::{self, GetUniformData, Camera, Uniform_Camera};
+use crate::obj_parser::{self, getObjectData};
 
 //ANCHOR - SETTINGS
 const MAX_VERT: usize = 65536;
@@ -172,6 +173,8 @@ pub async fn create_graphics(window: Rc<Window>, proxy: EventLoopProxy<Graphics>
 }
 
 fn create_pipeline(device: &Device, swap_chain_format: TextureFormat, layout: PipelineLayout,) -> RenderPipeline {
+    getObjectData("cubiod".to_string());
+
     let shader = device.create_shader_module(ShaderModuleDescriptor {
         label: None,
         source: ShaderSource::Wgsl(Cow::Borrowed(include_str!("shader.wgsl"))),
