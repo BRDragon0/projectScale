@@ -20,6 +20,7 @@ pub struct Camera{
 pub struct Uniform_Camera {
     pub view: [[f32; 4]; 4],
     pub proj: [[f32; 4]; 4],
+    pub cpos: [f32; 4],
 }
 
 
@@ -32,12 +33,12 @@ impl CreateView for Camera{
     fn create_view(&self) -> Mat4 {
         let virt_view = Mat4::from_rotation_translation(                    
                     Quat::from_euler(
-                        EulerRot::YXZ, 
+                        EulerRot::XYZ, 
                         self.rotation[0].to_radians(), 
                         self.rotation[1].to_radians(), 
                         self.rotation[2].to_radians(),
                     ), Vec3::from_array(self.position));
-        virt_view
+        virt_view.inverse()
     }
 }
 
@@ -80,6 +81,7 @@ impl GetUniformData for Camera{
         Uniform_Camera{
             view: self.create_view().to_cols_array_2d(),
             proj: self.create_proj().to_cols_array_2d(),
+            cpos: [self.position[0], self.position[1], self.position[2], 1.0],
         }
     }
 }

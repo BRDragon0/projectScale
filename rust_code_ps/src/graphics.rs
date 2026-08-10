@@ -294,7 +294,7 @@ impl Graphics {
             let update_camera =     
             camera_drg::Camera{
                 position: [0.0, 0.0, -0.4],
-                rotation: [0.0, 0.0, 0.0],
+                rotation: [self.time * 10.0, 0.0, 0.0],
                 perspective: true,
                 view_values: [0.0, 100.0, 90.0,
                 self.window.inner_size().width as f32 / 
@@ -302,7 +302,8 @@ impl Graphics {
                 // perspective: false,
                 // view_values: [0.1, 10.0, 1.0, 1.0],
             };
-
+            
+            //Faces
             let indices = [
                 0 as u16, 2, 1, 
                 1, 2, 3,
@@ -316,7 +317,8 @@ impl Graphics {
                 1, 3, 7,
                 2, 7, 3,
                 2, 6, 7,
-                ];
+            ];
+
             let mut padded = bytemuck::bytes_of(&indices).to_vec();
             for i in 0..5{
                 if padded.len() % 4 != 0{
