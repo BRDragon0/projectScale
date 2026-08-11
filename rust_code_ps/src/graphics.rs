@@ -173,7 +173,6 @@ pub async fn create_graphics(window: Rc<Window>, proxy: EventLoopProxy<Graphics>
 }
 
 fn create_pipeline(device: &Device, swap_chain_format: TextureFormat, layout: PipelineLayout,) -> RenderPipeline {
-    getObjectData("cubiod".to_string());
 
     let shader = device.create_shader_module(ShaderModuleDescriptor {
         label: None,
