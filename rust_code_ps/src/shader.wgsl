@@ -10,6 +10,8 @@ var<uniform> camera: Camera;
 @group(1) @binding(1) var texture: texture_2d<f32>;
 @group(1) @binding(2) var sample: sampler;
 
+@group(2) @binding(0) var<uniform> transform: mat4x4<f32>;
+
 struct VertexOut {
     @builtin(position) pos: vec4<f32>,
     @location(0) uv: vec2<f32>,
@@ -23,7 +25,7 @@ fn vs_main(
     @location(2) normals: vec3<f32>,
 ) -> VertexOut {
     var out: VertexOut;
-    out.pos = camera.proj * camera.view * (vec4<f32>(pos, 1.0));
+    out.pos = camera.proj * camera.view * transform * (vec4<f32>(pos, 1.0));
     out.uv = uv;
     out.normals = normals;
     return out;

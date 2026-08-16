@@ -1,5 +1,5 @@
 use bytemuck::{Pod, Zeroable};
-use glam::{Mat4, Quat, Vec3, Vec4, EulerRot};
+use glam::{Mat4, Quat, Vec3, EulerRot};
 
 #[repr(C)] // Makes sure fields in correct order
 pub struct Camera{

@@ -1,5 +1,6 @@
-use rand::Rng;
 use glam::{Mat4, Vec3, Quat, EulerRot};
+use crate::graphics::Vertex;
+use std::collections::HashMap;
 
 use crate::obj_parser;
 
@@ -13,7 +14,7 @@ pub struct Object{
 
 impl Object{
     pub fn new(object_type: &str) -> Object{
-    let object_data: obj_parser::ObjectData = obj_parser::getObjectData(object_type);
+    let object_data: obj_parser::ObjectData = obj_parser::get_object_data(object_type);
         Object {
             transform: Mat4::from_cols_array_2d(&[
             [1.0, 0.0, 0.0, 0.0,],
@@ -140,4 +141,33 @@ impl ObjectStates for Object{
     fn get_object_norm(&self) -> Vec<[f32; 3]> {
         self.normals.clone()
     }
+}
+
+pub fn format_object(object: Object) -> (Vec<u16>, Vec<Vertex>, Mat4){
+
+            let mut dupe_map: HashMap<[u16; 3], u16> = HashMap::new();
+            let mut vertices: Vec<Vertex> = Vec::new(); 
+            let mut indices: Vec<u16> = Vec::new();
+
+            let data = object.get_object_data();
+            let faces = data.1;
+            for n in 0..faces.len(){
+                if dupe_map.get(&faces[n]) != None{
+                    indices.push(*dupe_map.get(&faces[n]).unwrap());
+                }
+                else{
+                    dupe_map.insert(faces[n], vertices.len() as u16);
+                    vertices.push(Vertex{ 
+                            position: data.2[(faces[n][0] - 1) as usize], 
+                            uv: data.3[(faces[n][1] - 1) as usize], 
+                            normals: data.4[(faces[n][2] - 1) as usize],
+                    });
+                    indices.push((vertices.len() - 1) as u16);
+                }
+            }
+            if indices.len() % 2 == 1 {
+                indices.push(0);
+            }
+
+            (indices, vertices, data.0)
 }

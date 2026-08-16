@@ -1,17 +1,15 @@
 //https://github.com/Foxicution/wgpu-template/blob/master/src/shader.wgsl base template
 mod app;        //0-Adds the app.rs module
 mod graphics;   //0-Adds the graphic.rs module
-mod math_drg;
 mod camera_drg;
-mod debug_tools_drg;
 mod objects_handling;
 mod obj_parser;
 mod image_handling;
-mod dr_textures;
+mod dir;
 
 use crate::{app::App, graphics::Graphics};          //3-Crate is a path prefix so it shows the rust_code_pw   
 use winit::event_loop::{ControlFlow, EventLoop};    //1-Use winit functions
-use bytemuck::{Pod, Zeroable};
+//use bytemuck::{Pod, Zeroable};
 
 #[cfg(target_arch = "wasm32")]                      //1-Does not matter becuase this is not part of my system
 fn run_app(event_loop: EventLoop<Graphics>, app: App) {

@@ -7,26 +7,26 @@ pub struct ObjectData{
     pub normals: Vec<[f32; 3]>,
 }
 
-pub fn getObjectData(filePath: &str) -> ObjectData{
-    let rawData: String = fs::read_to_string(format!("../assets/objects/{filePath}.obj")).unwrap();
-    let formatedData: Vec<&str> = rawData.split('\n').collect();
+pub fn get_object_data(file_path: &str) -> ObjectData{
+    let raw_data: String = fs::read_to_string(format!("../assets/objects/{file_path}.obj")).unwrap();
+    let formated_data: Vec<&str> = raw_data.split('\n').collect();
     let mut fc: Vec<[u16; 3]> = Vec::new();
     let mut vc: Vec<[f32; 3]> = Vec::new();
     let mut uv: Vec<[f32; 2]> = Vec::new();
     let mut nm: Vec<[f32; 3]> = Vec::new();
     let mut data: Vec<Vec<&str>> = Vec::new();
-    for n in 0..formatedData.len(){
-        data.push(formatedData[n].split(' ').collect());
+    for n in 0..formated_data.len(){
+        data.push(formated_data[n].split(' ').collect());
     }
     for n in 0..data.len(){
         match data[n][0] {
             "f" => {
                 for i in 1..4{
-                    let tempSplit: Vec<&str> = data[n][i].split('/').collect();
+                    let temp_split: Vec<&str> = data[n][i].split('/').collect();
                     fc.push([
-                        tempSplit[0].parse::<u16>().unwrap(),
-                        tempSplit[1].parse::<u16>().unwrap(),
-                        tempSplit[2].parse::<u16>().unwrap(),
+                        temp_split[0].parse::<u16>().unwrap(),
+                        temp_split[1].parse::<u16>().unwrap(),
+                        temp_split[2].parse::<u16>().unwrap(),
                     ]);
                 }
             },
@@ -37,7 +37,7 @@ pub fn getObjectData(filePath: &str) -> ObjectData{
             ]);},
             "vt" => {uv.push([
                 data[n][1].parse::<f32>().unwrap(),
-                data[n][2].parse::<f32>().unwrap(),
+                1.0 - data[n][2].parse::<f32>().unwrap(),
             ]);},
             "vn" => {nm.push([
                 data[n][1].parse::<f32>().unwrap(),
