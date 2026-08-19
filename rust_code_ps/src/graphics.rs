@@ -85,9 +85,11 @@ pub async fn create_graphics(window: Rc<Window>, proxy: EventLoopProxy<Graphics>
                 position: [0.0, 0.0, -1.0],
                 rotation: [180.0, 0.0, 0.0],
                 perspective: true,
-                view_values: [0.1, 100.0, 90.0, width as f32 / height as f32],
-                // perspective: false,
-                // view_values: [0.1, 10.0, 1.0, 1.0],
+                near: 0.1,
+                far: 10.0,
+                width: width as f32,
+                height: height as f32,
+                fov: 90.0,
             };
 
     //SECTION - Texure controls
@@ -258,13 +260,8 @@ impl Graphics {
         self.surface_config.height = new_size.height.max(1);
         self.surface.configure(&self.device, &self.surface_config);
         (self.depth_texture, self.depth_texture_view) = generate_depth_texture(&self.device, &self.surface_config);
-        if self.camera_state.perspective{
-            self.camera_state.view_values[3] = self.window.inner_size().width as f32 / self.window.inner_size().height as f32;
-        }
-        else {
-            self.camera_state.view_values[2] = self.window.inner_size().width as f32;
-            self.camera_state.view_values[3] = self.window.inner_size().height as f32;
-        }
+        self.camera_state.width = self.window.inner_size().width as f32;
+        self.camera_state.height = self.window.inner_size().height as f32;
     }
 
     pub fn update(&mut self){

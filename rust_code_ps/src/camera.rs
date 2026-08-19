@@ -9,10 +9,11 @@ pub struct Camera{
     pub rotation: [f32; 3],
     //perspective or orthagonic
     pub perspective: bool,
-    //Depending on perspective
-    //False     Near, Far, Width, Hight
-    //True      Near, Far, FOV (y), Aspect
-    pub view_values: [f32; 4],
+    pub near: f32,
+    pub far: f32,
+    pub width: f32,
+    pub height: f32,
+    pub fov: f32,
 }
 
 #[repr(C)]
@@ -25,7 +26,16 @@ pub struct CameraData {
 
 impl Camera{
     pub fn new() -> Camera{
-        Camera { position: [0.0, 0.0, 0.0], rotation: [0.0, 0.0, 0.0], perspective: false, view_values: [0.1, 10.0, 1.0, 1.0] }
+        Camera { 
+            position: [0.0, 0.0, 0.0], 
+            rotation: [0.0, 0.0, 0.0], 
+            perspective: false, 
+            near: 0.1,
+            far: 10.0,
+            width: 1.0,
+            height: 1.0,
+            fov: 90.0,
+        }
     }
 }
 
@@ -63,20 +73,20 @@ impl CreateProjection for Camera{
         let virt_proj: Mat4 = 
             if self.perspective{
                 Mat4::perspective_rh(
-                self.view_values[2].to_radians(),
-                self.view_values[3], 
-                self.view_values[0], 
-                self.view_values[1],
+                self.fov.to_radians(),
+                self.width / self.height, 
+                self.near, 
+                self.far,
             )
             }
             else {
                 Mat4::orthographic_rh(
-                    self.view_values[2] / -2.0, 
-                    self.view_values[2] / 2.0, 
-                    self.view_values[3] / -2.0, 
-                    self.view_values[3] / 2.0, 
-                    self.view_values[0], 
-                    self.view_values[1],
+                    self.width / self.width.max(self.height) / -2.0, 
+                    self.width / self.width.max(self.height) / 2.0, 
+                    self.height / self.width.max(self.height) / -2.0, 
+                    self.height / self.width.max(self.height) / 2.0, 
+                    self.near, 
+                    self.far,
                 )
             };
         virt_proj
