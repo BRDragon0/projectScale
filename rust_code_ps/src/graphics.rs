@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::default;
 use std::collections::HashMap;
-use bytemuck::{Pod, Zeroable};
+use bytemuck::{Pod, Zeroable, bytes_of};
 
 use glam::{Mat4, Quat, Vec3, Vec4, EulerRot};
 use wgpu::util::DeviceExt;
@@ -16,10 +16,11 @@ use wgpu::{
 };
 use winit::{dpi::PhysicalSize, event_loop::EventLoopProxy, window::Window};
 
-use crate::objects_handling::{Object, ObjectStates, format_object};
-use crate::image_handling::{image_to_texture, texture_data, texture_size};
-use crate::dir::dir_uniform_buffers::matrix_buffer::create_matrix_buffer;
-use crate::dir::dir_textures::texture_control::generate_texture;
+use crate::dir::dir_objects::object_handling::{Object, ObjectStates};
+use crate::dir::dir_objects::object_rendering::RenderObject;
+use crate::image_handling::{texture_data};
+use crate::dir::dir_uniform_buffers::state_buffer::create_state_buffer;
+use crate::dir::dir_textures::texture_control::{generate_depth_texture, generate_texture};
 use crate::camera_drg::{self, GetUniformData, Camera, Uniform_Camera};
 
 //ANCHOR - SETTINGS
@@ -80,20 +81,6 @@ pub async fn create_graphics(window: Rc<Window>, proxy: EventLoopProxy<Graphics>
 
     surface.configure(&device, &surface_config);
 
-    let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor{
-        label: Some("vertex buffer"),
-        size: (MAX_VERT * std::mem::size_of::<Vertex>()) as u64,
-        usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
-
-    let index_buffer = device.create_buffer(&wgpu::BufferDescriptor{
-        label: Some("index buffer"),
-        size: (MAX_INDT * std::mem::size_of::<u16>()) as u64,
-        usage: wgpu::BufferUsages::INDEX| wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
-
     //ANCHOR - UNIFORM BUFFER SETUP
     let default_camera = camera_drg::Camera{
         position: [0.0, 0.0, 0.0],
@@ -145,20 +132,21 @@ pub async fn create_graphics(window: Rc<Window>, proxy: EventLoopProxy<Graphics>
         }
     );
 
-
+    //SECTION - Texure controls
     let (
         texture_asset, 
         texture_raw, 
         texture_size,
         texture_bind_group,
         texture_bind_group_layout,
-        depth_texture_view,
     ) = generate_texture(
         &device, 
         "cubiodTest", 
         "png", 
-        &surface_config
     );
+
+    let (depth_texture, depth_texture_view) = generate_depth_texture(&device, &surface_config);
+
     let (
         texture_info,
         texture_layout
@@ -175,15 +163,8 @@ pub async fn create_graphics(window: Rc<Window>, proxy: EventLoopProxy<Graphics>
         texture_size,
     );
 
-
-
     //Matrix buffer setup
-    let (matrix_buffer,
-        matrix_bind_group_layout, 
-        matrix_bind_group) = 
-        create_matrix_buffer(&device, Mat4::IDENTITY);
-
-
+    let matrix_bind_group_layout = create_state_buffer(&device).1;
 
     //Creates the pipeline layout with the uniform binding group
     //This is needed to add the uniform buffer to the pipeline
@@ -197,6 +178,11 @@ pub async fn create_graphics(window: Rc<Window>, proxy: EventLoopProxy<Graphics>
 
     let render_pipeline = create_pipeline(&device, surface_config.format, pipeline_layout);
 
+    //SECTION OBJECTS
+    let mut verts: Object = Object::new("cubiod");
+    verts.set_object_scale(Vec3::new(0.2, 0.2, 0.2));
+    let render_objects: Vec<RenderObject> = vec![RenderObject::new(&device, verts)];
+
     let gfx = Graphics {
         window: window.clone(),
         instance,
@@ -206,14 +192,13 @@ pub async fn create_graphics(window: Rc<Window>, proxy: EventLoopProxy<Graphics>
         device,
         queue,
         render_pipeline,
-        vertex_buffer,
         uniform_bind_group,
         uniform_buffer,
-        index_buffer,
+        render_objects,
         texture_bind_group,
+        depth_texture,
         depth_texture_view,
-        matrix_buffer,
-        matrix_bind_group,
+        last_frame: std::time::Instant::now(),
         time: 0.00,
     };
 
@@ -283,7 +268,7 @@ fn create_pipeline(device: &Device, swap_chain_format: TextureFormat, layout: Pi
     })
 }
 
-#[derive(Debug)]
+//#[derive(Debug)]
 pub struct Graphics {
     window: Rc<Window>,
     instance: Instance,
@@ -293,14 +278,13 @@ pub struct Graphics {
     device: Device,
     queue: Queue,
     render_pipeline: RenderPipeline,
-    vertex_buffer: wgpu::Buffer,
     uniform_bind_group: wgpu::BindGroup,
     uniform_buffer: wgpu::Buffer,
-    index_buffer: wgpu::Buffer,
+    render_objects: Vec<RenderObject>,
     texture_bind_group: wgpu::BindGroup,
+    depth_texture: wgpu::Texture,
     depth_texture_view: wgpu::TextureView,
-    matrix_buffer: wgpu::Buffer,
-    matrix_bind_group: wgpu::BindGroup,
+    last_frame: std::time::Instant,
     time: f32,
 }
 
@@ -313,10 +297,19 @@ impl Graphics {
         self.surface_config.width = new_size.width.max(1);
         self.surface_config.height = new_size.height.max(1);
         self.surface.configure(&self.device, &self.surface_config);
+        (self.depth_texture, self.depth_texture_view) = generate_depth_texture(&self.device, &self.surface_config);
+    }
+
+    pub fn update(&mut self){
+        let dt =  std::time::Instant::now().duration_since(self.last_frame);
+        self.last_frame = std::time::Instant::now();
+        self.time += dt.as_secs_f32();
+
+        //SECTION - EDIT OBJECTS HERE
+        self.render_objects[0].object.set_object_rotation(Vec3 { x: self.time * 30.0, y: self.time * 30.0, z: self.time * 30.0 });
     }
 
     pub fn draw(&mut self) {
-        self.time += 0.016; // ~60fps
         let frame = self
             .surface
             .get_current_texture()
@@ -351,22 +344,6 @@ impl Graphics {
             timestamp_writes: None,
             occlusion_query_set: None,
             });
-            r_pass.set_pipeline(&self.render_pipeline);
-
-            //SECTION OBJECT TO VERTICES
-            let mut verts: Object = Object::new("cubiod");
-            verts.set_object_scale(Vec3::new(0.2, 0.2, 0.2));
-            verts.set_object_rotation(Vec3 { x: self.time * 30.0, y: self.time * 30.0, z: 0.0 });
-
-            let (indices, vertices, transform) = format_object(verts);
-
-            // for n in 0..vertices.len(){
-            //     println!("v{:?}, vt{:?}, vn{:?}", vertices[n].position, vertices[n].uv, vertices[n].normals);
-            // }
-
-            // for n in 0..(indices.len() / 3){
-            //     println!("f {} {} {}", indices[n * 3 + 0], indices[n * 3 + 1], indices[n * 3 + 2]);
-            // }
 
             let update_camera =     
             camera_drg::Camera{
@@ -383,19 +360,21 @@ impl Graphics {
             let update_uniform = update_camera.get_uniform_data();
 
             //ANCHOR - SET BUFFERS
-            r_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+            r_pass.set_pipeline(&self.render_pipeline);
             r_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
             r_pass.set_bind_group(1, &self.texture_bind_group, &[]);
-            r_pass.set_bind_group(2, &self.matrix_bind_group, &[]);
-            r_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-
-            self.queue.write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&vertices));
             self.queue.write_buffer(&self.uniform_buffer,0,bytemuck::bytes_of(&update_uniform));
-            self.queue.write_buffer(&self.index_buffer, 0, bytemuck::cast_slice(&indices));
-            self.queue.write_buffer(&self.matrix_buffer, 0, bytemuck::bytes_of(&transform.to_cols_array_2d()));
 
-            let index_count = indices.len() as u32;
-            r_pass.draw_indexed(0..index_count, 0, 0..1);
+            //write to queue per object
+            for render_object in &mut self.render_objects{
+                self.queue.write_buffer(&render_object.state_buffer, 0,
+                    bytes_of(&render_object.object.get_object_state().to_cols_array_2d())
+                );
+                r_pass.set_vertex_buffer(0, render_object.vertex_buffer.slice(..));
+                r_pass.set_index_buffer(render_object.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+                r_pass.set_bind_group(2, &render_object.state_bind_group, &[]);
+                r_pass.draw_indexed(0..render_object.index_count, 0, 0..1);
+            }
         } // `r_pass` dropped here
         self.queue.submit(Some(encoder.finish()));
         frame.present();

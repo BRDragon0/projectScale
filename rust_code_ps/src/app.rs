@@ -23,6 +23,12 @@ impl App {
         }
     }
 
+    fn update(&mut self){
+        if let State::Ready(gfx ) = &mut self.state {
+            gfx.update();
+        }
+    }
+
     fn draw(&mut self) {
         if let State::Ready(gfx) = &mut self.state {
             gfx.draw();
@@ -89,7 +95,7 @@ impl ApplicationHandler<Graphics> for App {
     ) {
         match event {
             WindowEvent::Resized(size) => self.resized(size),
-            WindowEvent::RedrawRequested => {self.draw(); self.request_redraw();},
+            WindowEvent::RedrawRequested => {self.update(); self.draw(); self.request_redraw();},
             WindowEvent::CloseRequested => event_loop.exit(),
             _ => {}
         }

@@ -2,8 +2,6 @@
 mod app;        //0-Adds the app.rs module
 mod graphics;   //0-Adds the graphic.rs module
 mod camera_drg;
-mod objects_handling;
-mod obj_parser;
 mod image_handling;
 mod dir;
 

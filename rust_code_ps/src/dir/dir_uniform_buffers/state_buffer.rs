@@ -1,12 +1,11 @@
 use glam::Mat4;
 use wgpu::util::DeviceExt;
-use wgpu::{BindGroup, BindGroupLayout};
-use wgpu::{Device, Buffer};
+use wgpu::{BindGroup, BindGroupLayout, Device, Buffer};
 
-pub fn create_matrix_buffer(device: &Device, object_transform: Mat4) -> (wgpu::Buffer, wgpu::BindGroupLayout, wgpu::BindGroup){
+pub fn create_state_buffer(device: &Device) -> (wgpu::Buffer, wgpu::BindGroupLayout, wgpu::BindGroup){
     let buffer: Buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor{
         label: Some("uniform buffer"),
-        contents: bytemuck::bytes_of(&object_transform.to_cols_array_2d()),
+        contents: bytemuck::bytes_of(&Mat4::IDENTITY.to_cols_array_2d()),
         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
     });
 

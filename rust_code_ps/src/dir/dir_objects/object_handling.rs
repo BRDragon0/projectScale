@@ -2,7 +2,7 @@ use glam::{Mat4, Vec3, Quat, EulerRot};
 use crate::graphics::Vertex;
 use std::collections::HashMap;
 
-use crate::obj_parser;
+use crate::dir::dir_objects::object_parser::{ObjectData, get_object_data};
 
 pub struct Object{
     transform: Mat4,
@@ -14,7 +14,7 @@ pub struct Object{
 
 impl Object{
     pub fn new(object_type: &str) -> Object{
-    let object_data: obj_parser::ObjectData = obj_parser::get_object_data(object_type);
+    let object_data: ObjectData = get_object_data(object_type);
         Object {
             transform: Mat4::from_cols_array_2d(&[
             [1.0, 0.0, 0.0, 0.0,],
@@ -47,6 +47,8 @@ pub trait ObjectStates {
     fn get_object_vert(&self) -> Vec<[f32; 3]>;
     fn get_object_uv(&self) -> Vec<[f32; 2]>;
     fn get_object_norm(&self) -> Vec<[f32; 3]>;
+
+    fn format_object(&self) -> (Vec<u16>, Vec<Vertex>);
 }
 
 impl ObjectStates for Object{
@@ -141,16 +143,15 @@ impl ObjectStates for Object{
     fn get_object_norm(&self) -> Vec<[f32; 3]> {
         self.normals.clone()
     }
-}
 
-pub fn format_object(object: Object) -> (Vec<u16>, Vec<Vertex>, Mat4){
+    fn format_object(&self) -> (Vec<u16>, Vec<Vertex>){
 
             let mut dupe_map: HashMap<[u16; 3], u16> = HashMap::new();
             let mut vertices: Vec<Vertex> = Vec::new(); 
             let mut indices: Vec<u16> = Vec::new();
 
-            let data = object.get_object_data();
-            let faces = data.1;
+            let data = &self.get_object_data();
+            let faces = &data.1;
             for n in 0..faces.len(){
                 if dupe_map.get(&faces[n]) != None{
                     indices.push(*dupe_map.get(&faces[n]).unwrap());
@@ -169,5 +170,6 @@ pub fn format_object(object: Object) -> (Vec<u16>, Vec<Vertex>, Mat4){
                 indices.push(0);
             }
 
-            (indices, vertices, data.0)
+            (indices, vertices)
+    }
 }

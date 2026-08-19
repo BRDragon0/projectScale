@@ -7,14 +7,12 @@ pub fn generate_texture(
         device: &Device, 
         texture_name: &str, 
         file_type: &str, 
-        surface_config: &SurfaceConfiguration,
     ) -> (
         Texture,
         Vec<u8>,
         Extent3d,
         BindGroup,
         BindGroupLayout,
-        TextureView,
     ){
     let texture_bind_group_layout: BindGroupLayout =
         device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor { 
@@ -69,23 +67,6 @@ pub fn generate_texture(
 
     let texture_view = texture_asset.create_view(&wgpu::TextureViewDescriptor::default());
 
-    let depth_texture = device.create_texture(&wgpu::TextureDescriptor{
-        label: Some("depth_texture"),
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-        format: wgpu::TextureFormat::Depth32Float,
-        size: wgpu::Extent3d {
-            width: surface_config.width,
-            height: surface_config.height,
-            depth_or_array_layers: 1,
-        },
-        mip_level_count: 1,
-        sample_count: 1,
-        dimension: wgpu::TextureDimension::D2,
-        view_formats: &[],
-    });
-
-    let depth_texture_view = depth_texture.create_view(&wgpu::TextureViewDescriptor::default());
-
     let texture_bind_group = 
         device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("texture_bind_group"), 
@@ -107,6 +88,34 @@ pub fn generate_texture(
         texture_size,
         texture_bind_group,
         texture_bind_group_layout,
-        depth_texture_view,
+    )
+}
+
+pub fn generate_depth_texture(
+        device: &Device, 
+        surface_config: &SurfaceConfiguration,
+    ) -> (
+        Texture,
+        TextureView,
+    )
+    {
+    let depth_texture = device.create_texture(&wgpu::TextureDescriptor{
+        label: Some("depth_texture"),
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        format: wgpu::TextureFormat::Depth32Float,
+        size: wgpu::Extent3d {
+            width: surface_config.width,
+            height: surface_config.height,
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        view_formats: &[],
+    });
+
+    (
+        depth_texture.clone(),
+        depth_texture.create_view(&wgpu::TextureViewDescriptor::default())
     )
 }
