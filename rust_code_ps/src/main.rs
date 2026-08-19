@@ -1,7 +1,7 @@
 //https://github.com/Foxicution/wgpu-template/blob/master/src/shader.wgsl base template
 mod app;        //0-Adds the app.rs module
 mod graphics;   //0-Adds the graphic.rs module
-mod camera_drg;
+mod camera;
 mod image_handling;
 mod dir;
 

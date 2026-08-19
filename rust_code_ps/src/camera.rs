@@ -17,10 +17,22 @@ pub struct Camera{
 
 #[repr(C)]
 #[derive(Pod, Zeroable, Copy, Clone)]
-pub struct Uniform_Camera {
+pub struct CameraData {
     pub view: [[f32; 4]; 4],
     pub proj: [[f32; 4]; 4],
     pub cpos: [f32; 4],
+}
+
+impl Camera{
+    pub fn new() -> Camera{
+        Camera { position: [0.0, 0.0, 0.0], rotation: [0.0, 0.0, 0.0], perspective: false, view_values: [0.1, 10.0, 1.0, 1.0] }
+    }
+}
+
+impl CameraData{
+    pub fn new() -> CameraData{
+        Camera::new().get_camera_data()
+    }
 }
 
 
@@ -72,13 +84,13 @@ impl CreateProjection for Camera{
 }
 
 
-pub trait GetUniformData{
-    fn get_uniform_data(&self) -> Uniform_Camera;
+pub trait GetCameraData{
+    fn get_camera_data(&self) -> CameraData;
 }
 
-impl GetUniformData for Camera{
-    fn get_uniform_data(&self) -> Uniform_Camera {
-        Uniform_Camera{
+impl GetCameraData for Camera{
+    fn get_camera_data(&self) -> CameraData {
+        CameraData{
             view: self.create_view().to_cols_array_2d(),
             proj: self.create_proj().to_cols_array_2d(),
             cpos: [self.position[0], self.position[1], self.position[2], 1.0],

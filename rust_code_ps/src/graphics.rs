@@ -21,11 +21,8 @@ use crate::dir::dir_objects::object_rendering::RenderObject;
 use crate::image_handling::{texture_data};
 use crate::dir::dir_uniform_buffers::state_buffer::create_state_buffer;
 use crate::dir::dir_textures::texture_control::{generate_depth_texture, generate_texture};
-use crate::camera_drg::{self, GetUniformData, Camera, Uniform_Camera};
-
-//ANCHOR - SETTINGS
-const MAX_VERT: usize = 65536;
-const MAX_INDT: usize = 65536 * 3;
+use crate::dir::dir_uniform_buffers::camera_buffer::create_camera_buffer;
+use crate::camera::{self, GetCameraData, Camera, CameraData};
 
 #[cfg(target_arch = "wasm32")]
 pub type Rc<T> = std::rc::Rc<T>;
@@ -81,56 +78,17 @@ pub async fn create_graphics(window: Rc<Window>, proxy: EventLoopProxy<Graphics>
 
     surface.configure(&device, &surface_config);
 
-    //ANCHOR - UNIFORM BUFFER SETUP
-    let default_camera = camera_drg::Camera{
-        position: [0.0, 0.0, 0.0],
-        rotation: [45.0, 0.0, 0.0],
-        perspective: false,
-        view_values: [0.0, 10.0, 2.0, 2.0],
-    };
-
-    let uniform_data = default_camera.get_uniform_data();
-
-    let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor{
-        label: Some("uniform buffer"),
-        contents: bytemuck::bytes_of(&uniform_data),
-        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-    });
-
-    //Create camera bind group layout
-    //This creates the uniform bind group needed to add features like the camera position
-    let uniform_bind_group_layout: BindGroupLayout = 
-        device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor{
-            label: Some("uniform_bind_group_layout"),
-            entries: &[
-                wgpu::BindGroupLayoutEntry{
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX,
-                    ty: wgpu::BindingType::Buffer{
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                }
-            ],
-        }
-    );
-
-    //Creates uniform_bind_group
-    //Connects to buffer
-    let uniform_bind_group: BindGroup =
-        device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &uniform_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry{
-                    binding: 0,
-                    resource: uniform_buffer.as_entire_binding(),
-                }
-            ],
-            label: Some("uniform_bind_group"),        
-        }
-    );
+    //SECTION - Camera setup
+    let (camera_buffer, camera_bind_group, camera_bind_group_layout) = create_camera_buffer(&device);
+    let camera_state =     
+            Camera{
+                position: [0.0, 0.0, -1.0],
+                rotation: [180.0, 0.0, 0.0],
+                perspective: true,
+                view_values: [0.1, 100.0, 90.0, width as f32 / height as f32],
+                // perspective: false,
+                // view_values: [0.1, 10.0, 1.0, 1.0],
+            };
 
     //SECTION - Texure controls
     let (
@@ -170,7 +128,7 @@ pub async fn create_graphics(window: Rc<Window>, proxy: EventLoopProxy<Graphics>
     //This is needed to add the uniform buffer to the pipeline
     let pipeline_layout: PipelineLayout =
         device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            bind_group_layouts: &[&uniform_bind_group_layout, &texture_bind_group_layout, &matrix_bind_group_layout],
+            bind_group_layouts: &[&camera_bind_group_layout, &texture_bind_group_layout, &matrix_bind_group_layout],
             push_constant_ranges: &[],
             label: Some("pipeline_layout"),
         }
@@ -192,8 +150,9 @@ pub async fn create_graphics(window: Rc<Window>, proxy: EventLoopProxy<Graphics>
         device,
         queue,
         render_pipeline,
-        uniform_bind_group,
-        uniform_buffer,
+        camera_state,
+        camera_buffer,
+        camera_bind_group,
         render_objects,
         texture_bind_group,
         depth_texture,
@@ -278,8 +237,9 @@ pub struct Graphics {
     device: Device,
     queue: Queue,
     render_pipeline: RenderPipeline,
-    uniform_bind_group: wgpu::BindGroup,
-    uniform_buffer: wgpu::Buffer,
+    camera_state: Camera,
+    camera_buffer: wgpu::Buffer,
+    camera_bind_group: wgpu::BindGroup,
     render_objects: Vec<RenderObject>,
     texture_bind_group: wgpu::BindGroup,
     depth_texture: wgpu::Texture,
@@ -298,6 +258,13 @@ impl Graphics {
         self.surface_config.height = new_size.height.max(1);
         self.surface.configure(&self.device, &self.surface_config);
         (self.depth_texture, self.depth_texture_view) = generate_depth_texture(&self.device, &self.surface_config);
+        if self.camera_state.perspective{
+            self.camera_state.view_values[3] = self.window.inner_size().width as f32 / self.window.inner_size().height as f32;
+        }
+        else {
+            self.camera_state.view_values[2] = self.window.inner_size().width as f32;
+            self.camera_state.view_values[3] = self.window.inner_size().height as f32;
+        }
     }
 
     pub fn update(&mut self){
@@ -307,6 +274,8 @@ impl Graphics {
 
         //SECTION - EDIT OBJECTS HERE
         self.render_objects[0].object.set_object_rotation(Vec3 { x: self.time * 30.0, y: self.time * 30.0, z: self.time * 30.0 });
+
+        //SECTION - EDIT CAMERA HERE
     }
 
     pub fn draw(&mut self) {
@@ -345,25 +314,11 @@ impl Graphics {
             occlusion_query_set: None,
             });
 
-            let update_camera =     
-            camera_drg::Camera{
-                position: [0.0, 0.0, -1.0],
-                rotation: [180.0, 0.0, 0.0],
-                perspective: true,
-                view_values: [0.1, 100.0, 90.0,
-                self.window.inner_size().width as f32 / 
-                self.window.inner_size().height as f32],
-                // perspective: false,
-                // view_values: [0.1, 10.0, 1.0, 1.0],
-            };
-
-            let update_uniform = update_camera.get_uniform_data();
-
             //ANCHOR - SET BUFFERS
             r_pass.set_pipeline(&self.render_pipeline);
-            r_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
+            r_pass.set_bind_group(0, &self.camera_bind_group, &[]);
             r_pass.set_bind_group(1, &self.texture_bind_group, &[]);
-            self.queue.write_buffer(&self.uniform_buffer,0,bytemuck::bytes_of(&update_uniform));
+            self.queue.write_buffer(&self.camera_buffer,0,bytemuck::bytes_of(&self.camera_state.get_camera_data()));
 
             //write to queue per object
             for render_object in &mut self.render_objects{
