@@ -1,22 +1,24 @@
 use wgpu::util::DeviceExt;
 use wgpu::{BindGroup, BindGroupLayout, Device, Buffer};
+pub type Rc<T> = std::sync::Arc<T>;
 
 use crate::dir::dir_objects::object_handling::{Object, ObjectStates};
 use crate::dir::dir_uniform_buffers::state_buffer::create_state_buffer;
 
 pub struct RenderObject{
     pub object: Object,
-    pub vertex_buffer: wgpu::Buffer,
-    pub index_buffer: wgpu::Buffer,
+    pub vertex_buffer: Buffer,
+    pub index_buffer: Buffer,
     pub index_count: u32,
-    pub state_buffer: wgpu::Buffer,
-    pub state_bind_group: wgpu::BindGroup,
-    pub state_bind_group_layout: wgpu::BindGroupLayout,
+    pub state_buffer: Buffer,
+    pub state_bind_group: BindGroup,
+    pub state_bind_group_layout: BindGroupLayout,
+    pub texture_bind_group: Rc<BindGroup>,
 }
 
 impl RenderObject {
     // The idiomatic constructor function
-    pub fn new(device: &wgpu::Device, object: Object) -> Self {
+    pub fn new(device: &Device, texture_bind_group: Rc<BindGroup>, object: Object) -> Self {
         let (indices, vertices) = object.format_object();
         let (state_buffer, state_bind_group_layout, state_bind_group) = create_state_buffer(&device);
         Self {
@@ -38,7 +40,8 @@ impl RenderObject {
 
             state_buffer,
             state_bind_group,
-            state_bind_group_layout
+            state_bind_group_layout,
+            texture_bind_group,
         }
     }
 }

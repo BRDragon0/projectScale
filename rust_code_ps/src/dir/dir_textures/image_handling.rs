@@ -1,11 +1,20 @@
 use image::{ImageReader};
 
-pub fn image_to_texture(textureName: &str, fileType: &str) -> (Vec<u8>, u32, u32){
-    let img = ImageReader::open(format!("../assets/textures/{textureName}.{fileType}")).unwrap().decode().unwrap().to_rgba8();
-    let imgX = img.width();
-    let imgY = img.height();
-    let imgData = img.into_raw();
-    (imgData, imgX, imgY)
+use crate::dir::dir_fallbacks::fallback_defaults::FALLBACK_TEXTURE;
+
+pub fn image_to_texture(texture_name: String,) -> (Vec<u8>, u32, u32){
+    let img_buff = ImageReader::open(format!("assets/textures/{texture_name}"));
+    let mut img = FALLBACK_TEXTURE.clone();
+    if let Ok(value) = img_buff{
+        img = value.decode().unwrap().to_rgba8();
+    }
+    else{
+        println!("Error reading image file, file not found");
+    }
+    let img_x = img.width();
+    let img_y = img.height();
+    let img_data = img.into_raw();
+    (img_data, img_x, img_y)
 }
 
 pub fn texture_size(img_width: u32, img_height: u32) -> wgpu::Extent3d{

@@ -1,44 +1,44 @@
-use crate::image_handling::{image_to_texture, texture_size};
+use crate::dir::dir_textures::image_handling::{image_to_texture, texture_size};
 use wgpu::{BindGroup, BindGroupLayout, Extent3d, Texture};
 
 use wgpu::{Device, SurfaceConfiguration, TextureView,};
 
+pub fn create_texture_bind_group_layout(device: &Device) -> BindGroupLayout{
+    device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor { 
+        label: Some("texture_bind_group_layout"), 
+        entries: &[
+            wgpu::BindGroupLayoutEntry{
+                binding: 1,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true }, 
+                        view_dimension: wgpu::TextureViewDimension::D2, 
+                        multisampled: false 
+                },
+                count: None,
+            },
+            wgpu::BindGroupLayoutEntry{
+                binding: 2,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                count: None,
+            },
+        ],
+    })
+}
+
 pub fn generate_texture(
         device: &Device, 
-        texture_name: &str, 
-        file_type: &str, 
+        texture_name: String, 
+        texture_bind_group_layout: &BindGroupLayout,
     ) -> (
         Texture,
         Vec<u8>,
         Extent3d,
         BindGroup,
-        BindGroupLayout,
     ){
-    let texture_bind_group_layout: BindGroupLayout =
-        device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor { 
-            label: Some("texture_bind_group_layout"), 
-            entries: &[
-                wgpu::BindGroupLayoutEntry{
-                    binding: 1,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                         sample_type: wgpu::TextureSampleType::Float { filterable: true }, 
-                         view_dimension: wgpu::TextureViewDimension::D2, 
-                         multisampled: false 
-                    },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry{
-                    binding: 2,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                    count: None,
-                },
-            ],
-        });
-
     //Create nessisary data for texture write
-    let texture_image = image_to_texture(texture_name, file_type);
+    let texture_image = image_to_texture(texture_name);
     let texture_size: wgpu::Extent3d = texture_size(texture_image.1, texture_image.2);
     let texture_asset = 
         device.create_texture(&wgpu::TextureDescriptor{
@@ -87,7 +87,6 @@ pub fn generate_texture(
         texture_image.0,
         texture_size,
         texture_bind_group,
-        texture_bind_group_layout,
     )
 }
 

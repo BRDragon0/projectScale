@@ -1954,6 +1954,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "project-scale"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "console_error_panic_hook",
+ "console_log",
+ "env_logger",
+ "glam",
+ "image",
+ "log",
+ "pollster",
+ "rand 0.10.2",
+ "wasm-bindgen-futures",
+ "wgpu",
+ "winit",
+]
+
+[[package]]
 name = "pulp"
 version = "0.22.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3020,24 +3038,6 @@ dependencies = [
  "wgpu-types",
  "windows",
  "windows-core",
-]
-
-[[package]]
-name = "wgpu-template"
-version = "0.1.0"
-dependencies = [
- "bytemuck",
- "console_error_panic_hook",
- "console_log",
- "env_logger",
- "glam",
- "image",
- "log",
- "pollster",
- "rand 0.10.2",
- "wasm-bindgen-futures",
- "wgpu",
- "winit",
 ]
 
 [[package]]

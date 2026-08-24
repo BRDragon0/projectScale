@@ -2,7 +2,6 @@
 mod app;        //0-Adds the app.rs module
 mod graphics;   //0-Adds the graphic.rs module
 mod camera;
-mod image_handling;
 mod dir;
 
 use crate::{app::App, graphics::Graphics};          //3-Crate is a path prefix so it shows the rust_code_pw   

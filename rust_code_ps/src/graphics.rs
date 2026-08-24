@@ -18,11 +18,11 @@ use winit::{dpi::PhysicalSize, event_loop::EventLoopProxy, window::Window};
 
 use crate::dir::dir_objects::object_handling::{Object, ObjectStates};
 use crate::dir::dir_objects::object_rendering::RenderObject;
-use crate::image_handling::{texture_data};
+use crate::dir::dir_textures::image_handling::texture_data;
 use crate::dir::dir_uniform_buffers::state_buffer::create_state_buffer;
-use crate::dir::dir_textures::texture_control::{generate_depth_texture, generate_texture};
+use crate::dir::dir_textures::texture_control::{create_texture_bind_group_layout, generate_depth_texture, generate_texture};
 use crate::dir::dir_uniform_buffers::camera_buffer::create_camera_buffer;
-use crate::camera::{self, GetCameraData, Camera, CameraData};
+use crate::camera::{GetCameraData, Camera};
 
 #[cfg(target_arch = "wasm32")]
 pub type Rc<T> = std::rc::Rc<T>;
@@ -93,35 +93,47 @@ pub async fn create_graphics(window: Rc<Window>, proxy: EventLoopProxy<Graphics>
             };
 
     //SECTION - Texure controls
-    let (
-        texture_asset, 
-        texture_raw, 
-        texture_size,
-        texture_bind_group,
-        texture_bind_group_layout,
-    ) = generate_texture(
-        &device, 
-        "cubiodTest", 
-        "png", 
-    );
-
     let (depth_texture, depth_texture_view) = generate_depth_texture(&device, &surface_config);
 
-    let (
-        texture_info,
-        texture_layout
-    ) = texture_data(
-        &texture_asset, 
-        texture_size.width, 
-        texture_size.height
-    );
+    //SECTION OBJECTS
+    let mut obj1: Object = Object::new("toriod");
+    obj1.set_object_scale(Vec3::new(0.2, 0.2, 0.2));
+    obj1.texture_file = "cubiodTest.png".to_string();
+    let mut obj2: Object = Object::new("cubiod");
+    obj2.set_object_scale(Vec3::new(0.2, 0.2, 0.2));
+    obj2.set_object_position(Vec3 { x: 1.0, y: 0.0, z: 0.0 });
 
-    queue.write_texture(
-        texture_info,
-        &texture_raw,
-        texture_layout,
-        texture_size,
-    );
+    let objects_vec: Vec<Object> = vec![obj1, obj2];
+    let mut texture_map: HashMap<String, Rc<BindGroup>> = HashMap::new();
+    let mut render_objects: Vec<RenderObject> = Vec::new();
+
+    let texture_bind_group_layout = create_texture_bind_group_layout(&device);
+
+    for c_object in objects_vec{
+        if texture_map.get(&c_object.texture_file) != None{
+            render_objects.push(
+                RenderObject::new(
+                    &device, 
+                    texture_map.get(&c_object.texture_file).unwrap().clone(),
+                    c_object,
+                ));
+        }
+        else{
+            let (texture_asset, texture_raw, texture_size,texture_bind_group)
+             = generate_texture(&device, c_object.texture_file.clone(), &texture_bind_group_layout);
+            let (texture_info, texture_layout)
+             = texture_data(&texture_asset, texture_size.width, texture_size.height);
+            queue.write_texture(texture_info, &texture_raw, texture_layout, texture_size);
+
+            texture_map.insert(c_object.texture_file.clone(), Rc::new(texture_bind_group));
+            render_objects.push(
+                RenderObject::new(
+                    &device, 
+                    texture_map.get(&c_object.texture_file).unwrap().clone(),
+                    c_object, 
+            ));
+        }
+    }
 
     //Matrix buffer setup
     let matrix_bind_group_layout = create_state_buffer(&device).1;
@@ -138,11 +150,6 @@ pub async fn create_graphics(window: Rc<Window>, proxy: EventLoopProxy<Graphics>
 
     let render_pipeline = create_pipeline(&device, surface_config.format, pipeline_layout);
 
-    //SECTION OBJECTS
-    let mut verts: Object = Object::new("cubiod");
-    verts.set_object_scale(Vec3::new(0.2, 0.2, 0.2));
-    let render_objects: Vec<RenderObject> = vec![RenderObject::new(&device, verts)];
-
     let gfx = Graphics {
         window: window.clone(),
         instance,
@@ -156,7 +163,6 @@ pub async fn create_graphics(window: Rc<Window>, proxy: EventLoopProxy<Graphics>
         camera_buffer,
         camera_bind_group,
         render_objects,
-        texture_bind_group,
         depth_texture,
         depth_texture_view,
         last_frame: std::time::Instant::now(),
@@ -243,7 +249,6 @@ pub struct Graphics {
     camera_buffer: wgpu::Buffer,
     camera_bind_group: wgpu::BindGroup,
     render_objects: Vec<RenderObject>,
-    texture_bind_group: wgpu::BindGroup,
     depth_texture: wgpu::Texture,
     depth_texture_view: wgpu::TextureView,
     last_frame: std::time::Instant,
@@ -271,6 +276,7 @@ impl Graphics {
 
         //SECTION - EDIT OBJECTS HERE
         self.render_objects[0].object.set_object_rotation(Vec3 { x: self.time * 30.0, y: self.time * 30.0, z: self.time * 30.0 });
+        self.render_objects[1].object.set_object_position(Vec3 { x: (self.time * 30.0).to_radians().sin(), y: (self.time * 30.0).to_radians().cos(), z: 0.0});
 
         //SECTION - EDIT CAMERA HERE
     }
@@ -314,7 +320,6 @@ impl Graphics {
             //ANCHOR - SET BUFFERS
             r_pass.set_pipeline(&self.render_pipeline);
             r_pass.set_bind_group(0, &self.camera_bind_group, &[]);
-            r_pass.set_bind_group(1, &self.texture_bind_group, &[]);
             self.queue.write_buffer(&self.camera_buffer,0,bytemuck::bytes_of(&self.camera_state.get_camera_data()));
 
             //write to queue per object
@@ -324,6 +329,7 @@ impl Graphics {
                 );
                 r_pass.set_vertex_buffer(0, render_object.vertex_buffer.slice(..));
                 r_pass.set_index_buffer(render_object.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+                r_pass.set_bind_group(1, render_object.texture_bind_group.as_ref(), &[]);
                 r_pass.set_bind_group(2, &render_object.state_bind_group, &[]);
                 r_pass.draw_indexed(0..render_object.index_count, 0, 0..1);
             }

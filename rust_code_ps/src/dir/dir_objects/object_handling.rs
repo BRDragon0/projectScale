@@ -10,6 +10,7 @@ pub struct Object{
     verticies: Vec<[f32; 3]>,
     uv: Vec<[f32; 2]>,
     normals: Vec<[f32; 3]>,
+    pub texture_file: String,
 }
 
 impl Object{
@@ -26,6 +27,7 @@ impl Object{
             normals: object_data.normals,
             uv: object_data.uv,
             faces: object_data.faces,
+            texture_file: "default.png".to_string(),
         }
     }
 }

@@ -1,0 +1,7 @@
+=object{
+    view: perspective;
+    constraints: none;
+    model: cubiod.obj;
+    pivot: center;
+    texture: cubiodTest.png;
+}

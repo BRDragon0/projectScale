@@ -1,5 +1,7 @@
 use std::fs;
 
+use crate::dir::dir_fallbacks::fallback_defaults::FALLBACK_CUBE;
+
 pub struct ObjectData{
     pub faces: Vec<[u16; 3]>,
     pub verticies: Vec<[f32; 3]>,
@@ -8,7 +10,11 @@ pub struct ObjectData{
 }
 
 pub fn get_object_data(file_path: &str) -> ObjectData{
-    let raw_data: String = fs::read_to_string(format!("../assets/objects/{file_path}.obj")).unwrap();
+    let raw_data: String = fs::read_to_string(format!("assets/objects/{file_path}.obj")).unwrap_or_else(|err| {
+        //Returns defualt cube if the file cant be found
+        println!("Error finding file: {}", err);
+        FALLBACK_CUBE.to_string()
+    });
     let formated_data: Vec<&str> = raw_data.split('\n').collect();
     let mut fc: Vec<[u16; 3]> = Vec::new();
     let mut vc: Vec<[f32; 3]> = Vec::new();
