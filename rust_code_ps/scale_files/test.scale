@@ -1,4 +1,4 @@
-=object{
+=object:{
     view: perspective;
     constraints: none;
     model: cubiod.obj;
