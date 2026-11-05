@@ -19,6 +19,7 @@ glam = "0.32.1"
 bytemuck = "1.25.0"
 rand = "0.10.2"
 image = "0.25.10"
+regex = "1.13.1"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.7"

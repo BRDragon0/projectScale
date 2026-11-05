@@ -1,12 +1,9 @@
 use std::borrow::Cow;
-use std::default;
 use std::collections::HashMap;
 use bytemuck::{Pod, Zeroable, bytes_of};
 
-use glam::{Mat4, Quat, Vec3, Vec4, EulerRot};
-use wgpu::util::DeviceExt;
-use wgpu::{BindGroup, BindGroupLayout, PipelineLayout};
-use wgpu::wgc::pipeline;
+use glam::{Vec3};
+use wgpu::{BindGroup, PipelineLayout};
 use wgpu::{
     Adapter, Color, CommandEncoderDescriptor, Device, DeviceDescriptor, Features, FragmentState,
     Instance, Limits, LoadOp, MemoryHints, Operations, PowerPreference, Queue,
@@ -14,6 +11,15 @@ use wgpu::{
     RequestAdapterOptions, ShaderModuleDescriptor, ShaderSource, StoreOp, Surface,
     SurfaceConfiguration, TextureFormat, TextureViewDescriptor, VertexState,
 };
+
+//More stuff that could be important but im not sure
+#[allow(unused_imports)]
+use wgpu::BindGroupLayout;
+#[allow(unused_imports)]
+use wgpu::util::DeviceExt;
+#[allow(unused_imports)]
+use wgpu::wgc::pipeline;
+
 use winit::{dpi::PhysicalSize, event_loop::EventLoopProxy, window::Window};
 
 use crate::dir::dir_objects::object_handling::{Object, ObjectStates};
@@ -23,6 +29,7 @@ use crate::dir::dir_uniform_buffers::state_buffer::create_state_buffer;
 use crate::dir::dir_textures::texture_control::{create_texture_bind_group_layout, generate_depth_texture, generate_texture};
 use crate::dir::dir_uniform_buffers::camera_buffer::create_camera_buffer;
 use crate::camera::{GetCameraData, Camera};
+use crate::dir::dir_scale::scale_handler::get_scale_data;
 
 #[cfg(target_arch = "wasm32")]
 pub type Rc<T> = std::rc::Rc<T>;
@@ -38,7 +45,9 @@ pub struct Vertex {
     pub normals: [f32; 3],
 }
 
-//Create buffer states struct for getting the bunding group and the piepline
+//Create buffer states struct for getting the binding group and the piepline
+//Cant remember why this is here so Ill mark dead code encase its important
+#[allow(dead_code)]
 struct BuffferStates {
     render_pipeline: wgpu::RenderPipeline,
     uniform_bind_group: wgpu::BindGroup,
@@ -237,10 +246,13 @@ fn create_pipeline(device: &Device, swap_chain_format: TextureFormat, layout: Pi
 
 //#[derive(Debug)]
 pub struct Graphics {
+    //Allowing dead code here becuase they were part of the template and I dont want to risk losing it
     window: Rc<Window>,
+    #[allow(dead_code)]
     instance: Instance,
     surface: Surface<'static>,
     surface_config: SurfaceConfiguration,
+    #[allow(dead_code)]
     adapter: Adapter,
     device: Device,
     queue: Queue,
@@ -267,6 +279,7 @@ impl Graphics {
         (self.depth_texture, self.depth_texture_view) = generate_depth_texture(&self.device, &self.surface_config);
         self.camera_state.width = self.window.inner_size().width as f32;
         self.camera_state.height = self.window.inner_size().height as f32;
+        get_scale_data("def");
     }
 
     pub fn update(&mut self){

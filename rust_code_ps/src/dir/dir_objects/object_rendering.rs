@@ -12,6 +12,7 @@ pub struct RenderObject{
     pub index_count: u32,
     pub state_buffer: Buffer,
     pub state_bind_group: BindGroup,
+    #[allow(dead_code)]
     pub state_bind_group_layout: BindGroupLayout,
     pub texture_bind_group: Rc<BindGroup>,
 }

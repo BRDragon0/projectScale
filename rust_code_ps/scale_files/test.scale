@@ -1,7 +1,14 @@
-=object:{
-    view: perspective;
-    constraints: none;
-    model: cubiod.obj;
-    pivot: center;
-    texture: cubiodTest.png;
+!def.test_object1
+
++test_object1{
+    obj: toriod;
+    scl: (0.2, 0.2, 0.2);
+    act: {start > rotate_to > loop};
+}
+
+!def.test_object2
+
++test_object2{
+    scl: (0.2, 0.2, 0.2);
+    act: {start > move_to > loop};
 }

@@ -1,8 +1,10 @@
 //https://github.com/Foxicution/wgpu-template/blob/master/src/shader.wgsl base template
+//TODO - Remove weird old comment system I used
 mod app;        //0-Adds the app.rs module
 mod graphics;   //0-Adds the graphic.rs module
 mod camera;
 mod dir;
+mod brd_utilities;
 
 use crate::{app::App, graphics::Graphics};          //3-Crate is a path prefix so it shows the rust_code_pw   
 use winit::event_loop::{ControlFlow, EventLoop};    //1-Use winit functions

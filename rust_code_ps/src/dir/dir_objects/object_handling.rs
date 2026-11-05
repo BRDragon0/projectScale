@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 use crate::dir::dir_objects::object_parser::{ObjectData, get_object_data};
 
+//TODO - Look into quaturnions for rotation
 pub struct Object{
     transform: Mat4,
     faces: Vec<[u16; 3]>,
@@ -33,6 +34,8 @@ impl Object{
 }
 
 pub trait ObjectStates {
+    #![allow(dead_code)]
+
     fn set_object_state(&mut self, position: Vec3, rotation: Vec3, scale: Vec3);
     fn set_object_position(&mut self, position: Vec3);
     fn set_object_rotation(&mut self, rotation: Vec3);
