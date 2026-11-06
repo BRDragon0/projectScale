@@ -4,16 +4,16 @@ Every object should have a base and an ID, ID can be given or generated
 
 Anything inside ** is a varible type
 
-to create a new type from a base use !*base*.*TYPE*
+to create a new type from a base use !*base*.*TYPE*;
 Any new type without a base can be definded by using the def(default) base or just defined on its own
-E.G !def.NEW or !NEW
+E.G !def.NEW; or !NEW;
 
 to change the new type for all of this type use ~*TYPE*
 changing the default will result in an error
 
-to use/create a new object from this type use +*base*.*id*
+to use/create a new object from this type use +*base*.*id*;
 
-comments are created using #'s by having one at the start and one at the end of the comment
+comments are created using // for single line comments and ///TEXTHERE/// for multiline
 
 
 

@@ -1,26 +1,26 @@
-#DO NOT CHANGE#
-!def{
-    #id#
+//DO NOT CHANGE
+!def:{
+    //id
     id: 0;
 
-    #model#
+    //model
     obj: cubiod;
 
-    #texture#
+    //texture
     txr: cubiodTest;
 
-    #pivot center of model#
+    //pivot center of model
     piv: (50%, 50%, 50%);
 
-    #position (c 3d coordiates)#
+    //position (c 3d coordiates)
     pos: (0c, 0c, 0c);
 
-    #scale of model#
+    //scale of model
     scl: (1, 1, 1);
 
-    #rotation (ed euler degrees)#
+    //rotation (ed euler degrees)
     rot: (0ed, 0ed, 0ed)
 
-    #actions default has none#
+    //actions default has none
     act: {};
-}
+};

@@ -9,6 +9,7 @@
 /// 
 /// get_enclosed_text()
 /// 
+//FIXME - DOESNT WORK WITH NESTED DELIMITERS
 #[allow(dead_code)]
 pub fn get_enclosed_text(input: &String, open_position: usize, close_type: &str) -> String{
     let input_vec: Vec<char> = input[open_position..].chars().collect(); 
